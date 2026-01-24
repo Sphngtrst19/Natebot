@@ -7,28 +7,29 @@
 
 import SwiftUI
 
-
 struct ContentView: View {
     @StateObject private var vm: ChatViewModel
 
     init() {
-        // ⚠️ DEMO ONLY:
-        // Put your API key here temporarily while learning.
-        // For real apps, use a backend so the key never ships to users.
-        let key = "OPENAI_API_KEY_HERE"
-        _vm = StateObject(wrappedValue: ChatViewModel(client: OpenAIClient(apiKey: key)))
+        // Simulator: 127.0.0.1 works.
+        // Physical iPhone: use your Mac's LAN IP (e.g., http://192.168.1.20:3000).
+        let baseURL = URL(string: "http://127.0.0.1:3000")!
+        let api = NatebotAPI(baseURL: baseURL)
+        _vm = StateObject(wrappedValue: ChatViewModel(api: api))
     }
-    
+
     var body: some View {
         VStack(spacing: 0) {
+            header
+
             ScrollViewReader { proxy in
                 List(vm.messages) { msg in
                     HStack {
                         if msg.role == .assistant {
                             bubble(text: msg.content, isUser: false)
-                            Spacer()
+                            Spacer(minLength: 0)
                         } else {
-                            Spacer()
+                            Spacer(minLength: 0)
                             bubble(text: msg.content, isUser: true)
                         }
                     }
@@ -38,8 +39,10 @@ struct ContentView: View {
                 }
                 .listStyle(.plain)
                 .onChange(of: vm.messages) { _, _ in
-                    if let last = vm.messages.last {
-                        withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
+                    guard let last = vm.messages.last else { return }
+                    // Avoid layout-timing issues that can trigger CoreGraphics NaN warnings
+                    DispatchQueue.main.async {
+                        proxy.scrollTo(last.id, anchor: .bottom)
                     }
                 }
             }
@@ -54,24 +57,53 @@ struct ContentView: View {
                     .padding(.top, 6)
             }
 
-            HStack(spacing: 10) {
-                TextField("Message Natebot…", text: $vm.draft, axis: .vertical)
-                    .textFieldStyle(.roundedBorder)
-                    .lineLimit(1...4)
-
-                Button {
-                    Task { await vm.send() }
-                } label: {
-                    if vm.isSending {
-                        ProgressView().scaleEffect(0.9)
-                    } else {
-                        Text("Send")
-                    }
-                }
-                .disabled(vm.isSending || vm.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-            .padding()
+            composer
         }
+    }
+
+    // MARK: - UI Pieces
+
+    private var header: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "sparkles")
+                .font(.headline)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Natebot")
+                    .font(.headline)
+                Text("Java + Oracle assistant (via local proxy)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            if vm.isSending {
+                ProgressView()
+                    .scaleEffect(0.9)
+            }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 10)
+        .background(Color(.systemBackground))
+    }
+
+    private var composer: some View {
+        HStack(spacing: 10) {
+            TextField("Message Natebot…", text: $vm.draft, axis: .vertical)
+                .textFieldStyle(.roundedBorder)
+                .lineLimit(1...4)
+
+            Button {
+                Task { await vm.send() }
+            } label: {
+                Text("Send")
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(vm.isSending || vm.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
+        .padding()
+        .background(Color(.systemBackground))
     }
 
     private func bubble(text: String, isUser: Bool) -> some View {
