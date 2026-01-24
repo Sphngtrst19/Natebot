@@ -125,9 +125,12 @@ Ensure the proxy server is running
 
 Run the app in the iOS Simulator
 
+
 The app connects to:
 
 http://127.0.0.1:3000
+
+
 
 Physical iPhone
 
@@ -148,7 +151,10 @@ No API keys or secrets are embedded in the app
 
 Backend code lives outside the iOS project to avoid accidental bundling
 
-Current Capabilities
+
+
+
+Current Capabilities:
 
 SwiftUI chat interface with auto-scroll
 
@@ -158,7 +164,11 @@ Local LLM inference (offline-capable)
 
 Coding-focused assistant behavior (Java / Oracle)
 
-Future Improvements (Planned)
+
+
+
+
+Future Improvements (Planned):
 
 Replace List with ScrollView + LazyVStack for improved chat stability
 
@@ -170,6 +180,8 @@ Deployment-ready proxy (Docker)
 
 Fine-tuned custom model
 
-License
+
+
+License:
 
 This project is for educational and experimental purposes.
